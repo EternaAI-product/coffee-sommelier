@@ -5,10 +5,10 @@ from google.genai import types
 
 app = Flask(__name__)
 
-# Добавляем таймаут 25 секунд, чтобы запрос не висел дольше
+# Клиент с таймаутом, чтобы запрос не "висел"
 client = genai.Client(
     api_key=os.environ.get("GEMINI_API_KEY"),
-    http_options=types.HttpOptions(timeout=25000) 
+    http_options=types.HttpOptions(timeout=30000)
 )
 
 system_prompt = "Ты — профессиональный AI-ассистент Кофейный сомелье."
@@ -16,9 +16,9 @@ system_prompt = "Ты — профессиональный AI-ассистент
 @app.route("/")
 def home():
     try:
-        # Используем модель, которую требует API
+        # Используем актуальную стабильную модель
         response = client.models.generate_content(
-            model='gemini-3.8-flash',
+            model='gemini-2.5-flash',
             contents="Помоги выбрать кофе в зернах с ягодной кислинкой.",
             config=types.GenerateContentConfig(
                 system_instruction=system_prompt
