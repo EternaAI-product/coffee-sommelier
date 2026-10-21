@@ -1,27 +1,33 @@
 import os
 from flask import Flask, render_template_string
 from google import genai
+from google.genai import types
 
 app = Flask(__name__)
 
-# Инициализируем клиент. Таймаут задается прямо в методе.
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+# Инициализируем клиент с таймаутом, чтобы запрос не мог длиться вечно
+client = genai.Client(
+    api_key=os.environ.get("GEMINI_API_KEY"),
+    http_options=types.HttpOptions(timeout=20000)  # 20 секунд
+)
 
 system_prompt = "Ты — профессиональный AI-ассистент Кофейный сомелье."
 
 @app.route("/")
 def home():
     try:
-        # Используем новый Interactions API с актуальной моделью и таймаутом
-        interaction = client.interactions.create(
-            model="gemini-3.8-flash",
-            input=f"{system_prompt}\n\nПомоги выбрать кофе в зернах с ягодной кислинкой.",
-            timeout=120  # Даем 120 секунд на ответ, чтобы избежать обрыва связи
+        # ИСПОЛЬЗУЕМ ПРАВИЛЬНЫЙ МЕТОД ДЛЯ ПРОСТЫХ ЗАПРОСОВ
+        response = client.models.generate_content(
+            model='gemini-3.8-flash',
+            contents="Помоги выбрать кофе в зернах с ягодной кислинкой.",
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt
+            )
         )
-        # В новом API текст ответа находится в свойстве output_text
-        answer = interaction.output_text
+        answer = response.text
     except Exception as e:
-        answer = f"Ошибка связи с API: {str(e)}"
+        # Если что-то пойдет не так, вы увидите ошибку на странице, а не бесконечную загрузку
+        answer = f"Произошла ошибка: {str(e)}"
     
     return render_template_string("<h1>AI-ассистент: Кофейный сомелье</h1><p>{{ answer }}</p>", answer=answer)
 
