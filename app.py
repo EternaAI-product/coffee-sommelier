@@ -11,9 +11,9 @@ system_prompt = "Ты — профессиональный AI-ассистент
 @app.route("/")
 def home():
     try:
-        # Используем самый базовый стабильный метод
+        # Используем актуальную модель, указанную в ошибке API
         response = client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-3.8-flash',
             contents="Помоги выбрать кофе в зернах с ягодной кислинкой."
         )
         answer = response.text
