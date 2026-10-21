@@ -1,20 +1,28 @@
 import os
 from flask import Flask, render_template_string
 from google import genai
+from google.genai import types
 
 app = Flask(__name__)
 
-client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+# Добавляем таймаут 25 секунд, чтобы запрос не висел дольше
+client = genai.Client(
+    api_key=os.environ.get("GEMINI_API_KEY"),
+    http_options=types.HttpOptions(timeout=25000) 
+)
 
 system_prompt = "Ты — профессиональный AI-ассистент Кофейный сомелье."
 
 @app.route("/")
 def home():
     try:
-        # Используем актуальную модель, указанную в ошибке API
+        # Используем модель, которую требует API
         response = client.models.generate_content(
             model='gemini-3.8-flash',
-            contents="Помоги выбрать кофе в зернах с ягодной кислинкой."
+            contents="Помоги выбрать кофе в зернах с ягодной кислинкой.",
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt
+            )
         )
         answer = response.text
     except Exception as e:
@@ -23,4 +31,5 @@ def home():
     return render_template_string("<h1>AI-ассистент: Кофейный сомелье</h1><p>{{ answer }}</p>", answer=answer)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)))
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
