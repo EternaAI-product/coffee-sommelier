@@ -1,7 +1,10 @@
 import os
+from flask import Flask, render_template_string
 from google import genai
 
-# Инициализация клиента Gemini с переменной окружения
+app = Flask(__name__)
+
+# Инициализация клиента Gemini
 client = genai.Client(
     api_key=os.environ.get("GEMINI_API_KEY"),
 )
@@ -17,7 +20,6 @@ generation_config = {
     'thinking_level': 'high',
 }
 
-# Системная инструкция с базой знаний обернута в безопасные тройные кавычки
 system_prompt = """
 Ты — профессиональный AI-ассистент «Кофейный сомелье» в интернет-магазине свежеобжаренного кофе. Твоя задача — помогать клиентам выбирать сорта кофе, подсказывать правильный помол под разные способы заваривания, консультировать по условиям подписки, срокам хранения и правилам доставки.
 
@@ -96,12 +98,22 @@ system_prompt = """
   Ответ: Напишите нам в поддержку или в чат на сайте, приложив фото. Мы бесплатно заменим товар или вернем деньги в течение 24 часов.
 """
 
-interaction = client.interactions.create(
-    model='models/gemini-3.8-flash',
-    input="Привет! Помоги выбрать кофе.",
-    system_instruction=system_prompt,
-    tools=tools,
-    generation_config=generation_config,
-)
+@app.route("/")
+def home():
+    try:
+        interaction = client.interactions.create(
+            model='models/gemini-3.8-flash',
+            input="Привет! Помоги выбрать кофе.",
+            system_instruction=system_prompt,
+            tools=tools,
+            generation_config=generation_config,
+        )
+        answer = interaction.steps[-1]
+    except Exception as e:
+        answer = f"Ошибка обращения к API: {str(e)}"
+    
+    return render_template_string("<h1>AI-ассистент: Кофейный сомелье</h1><p>{{ answer }}</p>", answer=answer)
 
-print(interaction.steps[-1])
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
