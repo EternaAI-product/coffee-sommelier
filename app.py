@@ -6,9 +6,6 @@ app = Flask(__name__)
 
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-tools = [{'type': 'google_search'}]
-generation_config = {'max_output_tokens': 65536, 'thinking_level': 'high'}
-
 system_prompt = """
 Ты — профессиональный AI-ассистент «Кофейный сомелье» в интернет-магазине свежеобжаренного кофе. Твоя задача — помогать клиентам выбирать сорта кофе, подсказывать правильный помол под разные способы заваривания, консультировать по условиям подписки, срокам хранения и правилам доставки.
 
@@ -90,17 +87,17 @@ system_prompt = """
 @app.route("/")
 def home():
     try:
-        interaction = client.interactions.create(
-            model='models/gemini-3.8-flash',
-            input="Привет! Помоги выбрать кофе.",
-            system_instruction=system_prompt,
-            tools=tools,
-            generation_config=generation_config,
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents="Привет! Помоги выбрать кофе.",
+            config={
+                'system_instruction': system_prompt,
+                'temperature': 0.7,
+            }
         )
-        answer = interaction.steps[-1]
+        answer = response.text
     except Exception as e:
-        answer = f"Ошибка обращения к API: {str(e)}"
-    
+        answer = f"Ошибка: {str(e)}"
     return render_template_string("<h1>AI-ассистент: Кофейный сомелье</h1><p>{{ answer }}</p>", answer=answer)
 
 if __name__ == "__main__":
