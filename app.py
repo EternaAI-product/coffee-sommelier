@@ -1,30 +1,23 @@
 import os
 from flask import Flask, render_template_string
 from google import genai
-from google.genai import types
 
 app = Flask(__name__)
 
-# Клиент с таймаутом, чтобы запрос не "висел"
-client = genai.Client(
-    api_key=os.environ.get("GEMINI_API_KEY"),
-    http_options=types.HttpOptions(timeout=30000)
-)
+# Клиент создается без лишних настроек, таймаут можно задать позже при необходимости
+client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 system_prompt = "Ты — профессиональный AI-ассистент Кофейный сомелье."
 
 @app.route("/")
 def home():
     try:
-        # Используем актуальную стабильную модель
-        response = client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents="Помоги выбрать кофе в зернах с ягодной кислинкой.",
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt
-            )
+        # Используем новый метод interactions.create для актуальной модели
+        interaction = client.interactions.create(
+            model="gemini-3.8-flash",
+            input=f"{system_prompt}\n\nПомоги выбрать кофе в зернах с ягодной кислинкой."
         )
-        answer = response.text
+        answer = interaction.output_text
     except Exception as e:
         answer = f"Ошибка связи с API: {str(e)}"
     
