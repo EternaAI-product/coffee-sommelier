@@ -4,7 +4,7 @@ from google import genai
 
 app = Flask(__name__)
 
-# Клиент создается без лишних настроек, таймаут можно задать позже при необходимости
+# Инициализируем клиент. Таймаут задается прямо в методе.
 client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 system_prompt = "Ты — профессиональный AI-ассистент Кофейный сомелье."
@@ -12,11 +12,13 @@ system_prompt = "Ты — профессиональный AI-ассистент
 @app.route("/")
 def home():
     try:
-        # Используем новый метод interactions.create для актуальной модели
+        # Используем новый Interactions API с актуальной моделью и таймаутом
         interaction = client.interactions.create(
             model="gemini-3.8-flash",
-            input=f"{system_prompt}\n\nПомоги выбрать кофе в зернах с ягодной кислинкой."
+            input=f"{system_prompt}\n\nПомоги выбрать кофе в зернах с ягодной кислинкой.",
+            timeout=120  # Даем 120 секунд на ответ, чтобы избежать обрыва связи
         )
+        # В новом API текст ответа находится в свойстве output_text
         answer = interaction.output_text
     except Exception as e:
         answer = f"Ошибка связи с API: {str(e)}"
